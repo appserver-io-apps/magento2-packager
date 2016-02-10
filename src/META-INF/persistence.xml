@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="http://www.appserver.io/appserver">
+
+    <persistenceUnits>
+
+        <persistenceUnit name="MagentoEntityManager"
+            interface="Doctrine\ORM\EntityManagerInterface"
+            type="Doctrine\ORM\EntityManager"
+            factory="AppserverIo\Appserver\PersistenceContainer\Doctrine\EntityManagerFactory">
+            
+            <metadataConfiguration type="annotation">
+
+                <directories>
+                    <directory>/common/classes/AppserverIo/Apps/Magento/Entities/Impl</directory>
+                </directories>
+
+                <params>
+                    <param name="isDevMode" type="boolean">true</param>
+                    <param name="useSimpleAnnotationReader" type="boolean">false</param>
+                    <param name="proxyDir" type="string">false</param>
+                </params>
+
+            </metadataConfiguration>
+
+            <datasource name="${magento2.instance.webapp.name}"/>
+
+        </persistenceUnit>
+
+    </persistenceUnits>
+
+</persistence>

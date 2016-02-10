@@ -1,0 +1,168 @@
+<?xml version="1.0"?>
+<project name="appserver-io-apps/magento2-packager" default="composer-init" basedir=".">
+
+    <!-- initialize ENV variable -->
+    <property environment="env" />
+
+    <!-- ==================================================================== -->
+    <!-- Generate a time stamp for further use in build targets               -->
+    <!-- ==================================================================== --> 
+    <tstamp>
+        <format property="time.stamp" pattern="yyyy-MM-dd_HHmmss"/>
+    </tstamp>
+
+    <!-- initialize file based properties -->
+    <property file="${basedir}/build.properties"/>
+    <property file="${basedir}/build.default.properties"/>
+    <property file="${basedir}/build.${os.family}.properties"/>
+
+    <!-- initialize the library specific properties -->
+    <property name="codepool" value="vendor"/>
+
+    <!-- initialize the directory where we can find the real build files -->
+    <property name="vendor.dir" value ="${basedir}/${codepool}" />
+    <property name="build.dir" value="${vendor.dir}/appserver-io/build" />
+    <property name="php-target.dir" value="${basedir}/target"/>
+
+    <!-- ==================================================================== -->
+    <!-- Import the common build configuration file                           -->
+    <!-- ==================================================================== -->
+    <import file="${build.dir}/common.xml" optional="true"/>
+
+    <!-- ==================================================================== -->
+    <!-- Checks if composer has installed it's dependencies                   -->
+    <!-- ==================================================================== -->
+    <target name="is-composer-installed">
+        <condition property="composer.present">
+            <available file="${build.dir}" type="dir"/>
+        </condition>
+    </target>
+
+    <!-- ==================================================================== -->
+    <!-- Installs all dependencies defined in composer.json                   -->
+    <!-- ==================================================================== -->
+    <target name="composer-install" depends="is-composer-installed" unless="composer.present" description="Installs all dependencies defined in composer.json">
+        <exec dir="${basedir}" executable="composer">
+            <arg line="--no-interaction --dev install"/>
+        </exec>
+    </target>
+
+    <!-- ==================================================================== -->
+    <!-- Updates composer dependencies defined in composer.json               -->
+    <!-- ==================================================================== -->
+    <target name="composer-update" depends="is-composer-installed" if="composer.present" description="Updates composer dependencies defined in composer.json">
+        <exec dir="${basedir}" executable="composer">
+            <arg line="--no-interaction --dev update"/>
+        </exec>
+    </target>
+
+    <!-- ===================================================================== -->
+    <!-- Checks if the build- and deployment stub has already been initialized -->
+    <!-- ===================================================================== -->
+    <target name="composer-init">
+        <antcall target="composer-install"/>
+        <antcall target="composer-update"/>
+    </target>
+
+    <!-- ==================================================================== -->
+    <!-- Creates the Swagger configuration                                    -->
+    <!-- ==================================================================== -->
+    <target name="swagger-it" description="Creates the Swagger configuration.">
+        <exec executable="src/vendor/bin/swagger">
+            <arg line="${php-src.dir} --exclude ${vendor.dir} --output ${php-target.dir}/${appserver.webapp.name}/swagger.json"/>
+        </exec>
+    </target>
+
+    <!-- ==================================================================== -->
+    <!-- Download's the Magento 2 sources, extract's them to the target       -->
+    <!-- directory and install's the composer dependencies                    -->
+    <!-- ==================================================================== -->
+    <target name="prepare-sources" if="deploy.sources" description="Download's the Magento 2 sources, extract's them to the target directory and install's the composer dependencies.">
+        <!-- copy the sources to the deploy directory -->
+        <get dest="${php-target.dir}" src="https://github.com/magento/${appserver.webapp.name}/archive/${appserver.webapp.version}.tar.gz"/>
+        <!-- extract the Magento 2 sources -->
+        <untar compression="gzip" src="${php-target.dir}/${appserver.webapp.version}.tar.gz" dest="${php-target.dir}"/>
+        <!-- install the composer dependencies -->
+        <exec dir="${php-target.dir}/${appserver.webapp.name}-${appserver.webapp.version}" executable="composer">
+            <arg line="install"/>
+        </exec>
+    </target>
+
+    <!-- ==================================================================== -->
+    <!-- Copies the sources to the target directory                           -->
+    <!-- ==================================================================== -->
+    <target name="copy" description="Copies the sources to the target directory.">
+        <!-- prepare the directory structure -->
+        <antcall target="prepare"/>
+        <!-- prepare the sources -->
+        <antcall target="prepare-sources"/>
+        <!-- copy sources and resources to the target directory -->
+        <copy todir="${php-target.dir}/${appserver.webapp.name}-${appserver.webapp.version}" preservelastmodified="true" overwrite="true">
+            <fileset dir="${php-src.dir}">
+                <include name="**/*" />
+            </fileset>
+            <filterchain>
+                <expandproperties/>
+            </filterchain>
+        </copy>
+    </target>
+
+    <!-- ==================================================================== -->
+    <!-- Copies any built package to the snapshot hosting server.             -->
+    <!-- ==================================================================== -->
+    <target name="copy-to-hub" description="Uploads any built package to the file-server.">
+        <echo message="Now try to upload all builds to file-server"/>
+        <exec executable="sh" failonerror="true">
+            <arg value="-c" />
+            <arg value="scp -o StrictHostKeyChecking=no -i ${user.home}/.ssh/id_rsa ${php-target.dir}/${package.filename} ${build.server.user}@${build.server.host}:${build.server.upload-path}" />
+        </exec>
+        <!-- update the latest remote package -->
+        <antcall target="update-latest-build" />
+    </target>
+
+    <!-- ==================================================================== -->
+    <!-- Will update the remote package indicating the latest successful      -->
+    <!-- built unless the "omit.update-latest" property is true.              -->
+    <!-- ==================================================================== -->
+    <target name="update-latest-build" unless="${omit.update-latest}" description="Will update the remote package indicating the latest successful built">
+        <echo message="Now try to update latest remote package"/>
+        <exec executable="sh" failonerror="true">
+            <arg value="-c" />
+            <arg value="scp -o StrictHostKeyChecking=no -i ${user.home}/.ssh/id_rsa ${php-target.dir}/${package.filename} ${build.server.user}@${build.server.host}:${build.server.upload-path}/${appserver.webapp.name}-latest.phar" />
+        </exec>
+    </target>
+
+    <!-- ==================================================================== -->
+    <!-- Copies the sources to the deploy directory                           -->
+    <!-- ==================================================================== -->
+    <target name="deploy" depends="copy" description="Copies the sources to the deploy directory.">
+        <!-- copy the sources to the deploy directory -->
+        <echo message="Copy sources to ${deploy.dir} ..."/>
+        <copy todir="${appserver.webapps.dir}" preservelastmodified="true" overwrite="true">
+            <fileset dir="${php-target.dir}">
+                <include name="**/*"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <!-- ==================================================================== -->
+    <!-- Creates a PHAR file for deployment                                   -->
+    <!-- ==================================================================== -->
+    <target name="create-phar" depends="copy" description="Creates a PHAR file for deployment.">
+        <!-- create the PHAR archive itself from the Magento 2 sources -->
+        <exec dir="${php-target.dir}" executable="${vendor.dir}/bin/phar">
+            <arg line="-c create -n ${php-target.dir}/${package.filename} -d ${php-target.dir}/${appserver.webapp.name}-${appserver.webapp.version}"/>
+        </exec>
+    </target>
+
+    <!-- ==================================================================== -->
+    <!-- Deploys the PHAR file into the configured deployment directory       -->
+    <!-- ==================================================================== -->
+    <target name="deploy-phar" depends="create-phar" description="Deploys the PHAR file into the configured deployment directory.">
+        <!-- copy the PHAR archive to the deploy directory -->
+        <copy file="${php-target.dir}/${package.filename}" tofile="${appserver.deploy.dir}/${appserver.webapp.name}.phar" failonerror="true"/>
+        <!-- create dodeploy flag to be transmitted via scp and do deploy on target system if needed -->
+        <touch file="${appserver.deploy.dir}/${appserver.webapp.name}.phar.dodeploy"/>
+    </target>
+
+</project>

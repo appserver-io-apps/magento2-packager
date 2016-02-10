@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<provision>
+    <datasource name="${magento2.instance.webapp.name}"/>
+    <installation>
+        <steps>
+            <step type="AppserverIo\Apps\Magento\Provisioning\Steps\PrepareDatabaseStep"/>
+            <step type="AppserverIo\Appserver\Provisioning\Steps\ExecCliStep">
+                <execute script="bin/magento">
+                    <args>
+                        <arg type="string">setup:install</arg>
+                        <arg name="db-host" type="string">
+                            <?php echo $this->getDatasource()->getDatabase()->getDatabaseHost()->getNodeValue() ?>
+                        </arg>
+                        <arg name="db-name" type="string">
+                            <?php echo $this->getDatasource()->getDatabase()->getDatabaseName()->getNodeValue() ?>
+                        </arg>
+                        <arg name="db-user" type="string">
+                            <?php echo $this->getDatasource()->getDatabase()->getUser()->getNodeValue() ?>
+                        </arg>
+                        <arg name="db-password" type="string">
+                            <?php echo $this->getDatasource()->getDatabase()->getPassword()->getNodeValue() ?>
+                        </arg>
+                        <arg name="language" type="string">${magento2.instance.language}</arg>
+                        <arg name="timezone" type="string">${magento2.instance.timezone}</arg>
+                        <arg name="currency" type="string">${magento2.instance.currency}</arg>
+                        <arg name="base-url" type="string">${magento2.instance.base-url}</arg>
+                        <arg name="base-url-secure" type="string">${magento2.instance.base-url-secure}</arg>
+                        <arg name="use-rewrites" type="string">${magento2.instance.use-rewrites}</arg>
+                        <arg name="use-secure" type="string">${magento2.instance.use-secure}</arg>
+                        <arg name="use-secure-admin" type="string">${magento2.instance.use-secure-admin}</arg>
+                        <arg name="admin-lastname" type="string">${magento2.instance.admin-lastname}</arg>
+                        <arg name="admin-firstname" type="string">${magento2.instance.admin-firstname}</arg>
+                        <arg name="admin-email" type="string">${magento2.instance.admin-email}</arg>
+                        <arg name="admin-user" type="string">${magento2.instance.admin-user}</arg>
+                        <arg name="admin-password" type="string">${magento2.instance.admin-password}</arg>
+                        <arg name="backend-frontname" type="string">${magento2.instance.backend-frontname}</arg>
+                    </args>
+                </execute>
+            </step>
+        </steps>
+    </installation>
+</provision>
