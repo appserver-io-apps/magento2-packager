@@ -59,7 +59,6 @@ class SchemaProcessor extends AbstractPersistenceProcessor implements SchemaProc
      */
     public function createSchema()
     {
-
         // load the entity manager and the schema tool
         $entityManager = $this->getEntityManager();
         $schemaTool = new SchemaTool($entityManager);
@@ -67,8 +66,7 @@ class SchemaProcessor extends AbstractPersistenceProcessor implements SchemaProc
         // load the class definitions
         $classes = $entityManager->getMetadataFactory()->getAllMetadata();
 
-        // drop the schema if it already exists and create it new
-        $schemaTool->dropSchema($classes);
-        $schemaTool->createSchema($classes);
+        // create or update the schema
+        $schemaTool->updateSchema($classes);
     }
 }

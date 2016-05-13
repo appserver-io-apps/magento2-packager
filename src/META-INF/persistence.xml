@@ -7,7 +7,7 @@
             interface="Doctrine\ORM\EntityManagerInterface"
             type="Doctrine\ORM\EntityManager"
             factory="AppserverIo\Appserver\PersistenceContainer\Doctrine\EntityManagerFactory">
-            
+
             <metadataConfiguration type="annotation">
 
                 <directories>

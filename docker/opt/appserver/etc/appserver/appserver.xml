@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<appserver xmlns="http://www.appserver.io/appserver"  xmlns:xi="http://www.w3.org/2001/XInclude">
+
+    <params>
+        <param name="user" type="string">root</param>
+        <param name="group" type="string">root</param>
+        <param name="umask" type="string">0002</param>
+        <param name="allowApplicationConfiguration" type="boolean">true</param>
+    </params>
+
+    <loggers>
+        <logger channelName="system" name="System" type="\AppserverIo\Logger\Logger">
+            <handlers>
+                <handler type="\AppserverIo\Logger\Handlers\CustomFileHandler">
+                    <formatter type="\AppserverIo\Logger\Formatters\StandardFormatter"/>
+                    <params>
+                        <param name="logFile" type="string">php://stdout</param>
+                        <param name="logLevel" type="string">info</param>
+                    </params>
+                </handler>
+            </handlers>
+        </logger>
+        <logger channelName="access" name="Access" type="\AppserverIo\Logger\Logger">
+            <handlers>
+                <handler type="\AppserverIo\Logger\Handlers\CustomFileHandler">
+                    <formatter type="\AppserverIo\Logger\Formatters\StandardFormatter">
+                        <params>
+                            <param name="format" type="string">%4$s</param>
+                        </params>
+                    </formatter>
+                    <params>
+                        <param name="logFile" type="string">php://stderr</param>
+                        <param name="logLevel" type="string">info</param>
+                    </params>
+                </handler>
+            </handlers>
+        </logger>
+    </loggers>
+
+    <containers>
+
+        <container
+                name="standalone"
+                type="AppserverIo\Appserver\Core\GenericContainer"
+                factory="AppserverIo\Appserver\Core\GenericContainerFactory">
+
+            <description>
+                <![CDATA[This is an example of a webserver container that handles http requests in common way]]>
+            </description>
+
+            <deployment type="AppserverIo\Appserver\Core\GenericDeployment" />
+
+            <host name="localhost" appBase="webapps" deployBase="deploy" tmpBase="var/tmp/localhost" />
+
+            <servers>
+
+                <server
+                        name="http"
+                        type="\AppserverIo\Server\Servers\MultiThreadedServer"
+                        worker="\AppserverIo\Server\Workers\ThreadWorker"
+                        socket="\AppserverIo\Server\Sockets\StreamSocket"
+                        requestContext="\AppserverIo\Server\Contexts\RequestContext"
+                        serverContext="\AppserverIo\Appserver\Server\Contexts\StandardServerContext"
+                        streamContext="\AppserverIo\Server\Contexts\StreamContext"
+                        loggerName="System">
+                    <params>
+                        <param name="admin" type="string">info@appserver.io</param>
+                        <param name="transport" type="string">tcp</param>
+                        <param name="address" type="string">0.0.0.0</param>
+                        <param name="port" type="integer">80</param>
+                        <param name="workerNumber" type="integer">16</param>
+                        <param name="workerAcceptMin" type="integer">3</param>
+                        <param name="workerAcceptMax" type="integer">8</param>
+                        <param name="documentRoot" type="string">webapps/${appserver.webapp.name}-${appserver.webapp.version}</param>
+                        <param name="directoryIndex" type="string">index.dhtml index.do index.php index.html index.htm</param>
+                        <param name="keepAliveMax" type="integer">64</param>
+                        <param name="keepAliveTimeout" type="integer">5</param>
+                        <param name="autoIndex" type="boolean">false</param>
+                        <param name="errorsPageTemplatePath" type="string">resources/templates/www/error.phtml</param>
+                        <param name="welcomePageTemplatePath" type="string">resources/templates/www/welcome.phtml</param>
+                        <param name="autoIndexTemplatePath" type="string">resources/templates/www/auto_index.phtml</param>
+                    </params>
+
+                    <environmentVariables>
+                        <environmentVariable condition="" definition="LOGGER_ACCESS=Access" />
+                    </environmentVariables>
+
+                    <connectionHandlers>
+                        <connectionHandler type="\AppserverIo\WebServer\ConnectionHandlers\HttpConnectionHandler" />
+                    </connectionHandlers>
+
+                    <rewrites>
+                        <rewrite condition="-d{OR}-f{OR}-l" target="" flag="L" />
+                        <!-- rewrite condition="/setup/.*" target="" flag="L" / -->
+                        <rewrite condition="/pub/static/(.*)" target="/pub/static.php?resource=$1" flag="L" />
+                        <rewrite condition="(.*)" target="index.php/$1" flag="L" />
+                    </rewrites>
+
+                    <headers>
+                        <header type="response" name="ExpiresDefault" value="access plus 1 year"/>
+                        <header type="response" name="ExpiresByType" value="text/html A0"/>
+                        <header type="response" name="ExpiresByType" value="text/plain A0"/>
+                    </headers>
+
+                    <accesses>
+                        <access type="allow">
+                            <params>
+                                <param name="X_REQUEST_URI" type="string">
+                                    ^\/([^\/]+\/)?(pub|index\.php).*
+                                </param>
+                            </params>
+                        </access>
+                    </accesses>
+
+                    <modules>
+                        <!-- REQUEST_POST hook -->
+                        <module type="\AppserverIo\WebServer\Modules\VirtualHostModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\AuthenticationModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\EnvironmentVariableModule" />
+                        <module type="\AppserverIo\WebServer\Modules\RewriteModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\DirectoryModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\AccessModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\LocationModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\AutoIndexModule"/>
+                        <!-- FileHandler Modules -->
+                        <!-- FileHandler Modules -->
+                        <module type="\AppserverIo\WebServer\Modules\CoreModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\FastCgiModule"/>
+                        <module type="\AppserverIo\Appserver\ServletEngine\ServletEngine"/>
+                        <module type="\AppserverIo\WebServer\Modules\ProxyModule"/>
+                        <!-- RESPONSE_PRE hook -->
+                        <module type="\AppserverIo\WebServer\Modules\HeaderModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\DeflateModule"/>
+                    </modules>
+
+                    <fileHandlers>
+                        <fileHandler name="fastcgi" extension=".php">
+                            <params>
+                                <param name="host" type="string">127.0.0.1</param>
+                                <param name="port" type="integer">9010</param>
+                            </params>
+                        </fileHandler>
+                        <fileHandler name="fastcgi" extension=".phtml">
+                            <params>
+                                <param name="host" type="string">127.0.0.1</param>
+                                <param name="port" type="integer">9010</param>
+                            </params>
+                        </fileHandler>
+                        <fileHandler name="servlet" extension=".dhtml" />
+                        <fileHandler name="servlet" extension=".do" />
+                    </fileHandlers>
+
+                </server>
+
+                <server
+                        name="https"
+                        type="\AppserverIo\Server\Servers\MultiThreadedServer"
+                        worker="\AppserverIo\Server\Workers\ThreadWorker"
+                        socket="\AppserverIo\Server\Sockets\StreamSocket"
+                        requestContext="\AppserverIo\Server\Contexts\RequestContext"
+                        serverContext="\AppserverIo\Appserver\Server\Contexts\StandardServerContext"
+                        streamContext="\AppserverIo\Server\Contexts\StreamContext"
+                        loggerName="System">
+                    <params>
+                        <param name="admin" type="string">info@appserver.io</param>
+                        <param name="workerNumber" type="integer">16</param>
+                        <param name="workerAcceptMin" type="integer">3</param>
+                        <param name="workerAcceptMax" type="integer">8</param>
+                        <param name="transport" type="string">ssl</param>
+                        <param name="address" type="string">0.0.0.0</param>
+                        <param name="port" type="integer">443</param>
+                        <param name="certPath" type="string">etc/appserver/server.pem</param>
+                        <param name="passphrase" type="string"></param>
+                        <param name="documentRoot" type="string">webapps/${appserver.webapp.name}-${appserver.webapp.version}</param>
+                        <param name="directoryIndex" type="string">index.dhtml index.do index.php index.html index.htm</param>
+                        <param name="keepAliveMax" type="integer">64</param>
+                        <param name="keepAliveTimeout" type="integer">5</param>
+                        <param name="autoIndex" type="boolean">false</param>
+                        <param name="errorsPageTemplatePath" type="string">resources/templates/www/error.phtml</param>
+                        <param name="welcomePageTemplatePath" type="string">resources/templates/www/welcome.phtml</param>
+                        <param name="autoIndexTemplatePath" type="string">resources/templates/www/auto_index.phtml</param>
+                    </params>
+
+                    <environmentVariables>
+                        <environmentVariable condition="" definition="LOGGER_ACCESS=Access" />
+                    </environmentVariables>
+
+                    <connectionHandlers>
+                        <connectionHandler type="\AppserverIo\WebServer\ConnectionHandlers\HttpConnectionHandler" />
+                    </connectionHandlers>
+
+                    <rewrites>
+                        <rewrite condition="-d{OR}-f{OR}-l" target="" flag="L" />
+                        <!-- rewrite condition="/setup/.*" target="" flag="L" / -->
+                        <rewrite condition="/pub/static/(.*)" target="/pub/static.php?resource=$1" flag="L" />
+                        <rewrite condition="(.*)" target="index.php/$1" flag="L" />
+                    </rewrites>
+
+                    <headers>
+                        <header type="response" name="ExpiresDefault" value="access plus 1 year"/>
+                        <header type="response" name="ExpiresByType" value="text/html A0"/>
+                        <header type="response" name="ExpiresByType" value="text/plain A0"/>
+                    </headers>
+
+                    <accesses>
+                        <access type="allow">
+                            <params>
+                                <param name="X_REQUEST_URI" type="string">
+                                    ^\/([^\/]+\/)?(pub|index\.php).*
+                                </param>
+                            </params>
+                        </access>
+                    </accesses>
+
+                    <modules>
+                        <!-- REQUEST_POST hook -->
+                        <module type="\AppserverIo\WebServer\Modules\VirtualHostModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\AuthenticationModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\EnvironmentVariableModule" />
+                        <module type="\AppserverIo\WebServer\Modules\RewriteModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\DirectoryModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\AccessModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\LocationModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\AutoIndexModule"/>
+                        <!-- FileHandler Modules -->
+                        <module type="\AppserverIo\WebServer\Modules\CoreModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\FastCgiModule"/>
+                        <module type="\AppserverIo\Appserver\ServletEngine\ServletEngine"/>
+                        <module type="\AppserverIo\WebServer\Modules\ProxyModule"/>
+                        <!-- RESPONSE_PRE hook -->
+                        <module type="\AppserverIo\WebServer\Modules\HeaderModule"/>
+                        <module type="\AppserverIo\WebServer\Modules\DeflateModule"/>
+                    </modules>
+
+                    <fileHandlers>
+                        <fileHandler name="fastcgi" extension=".php">
+                            <params>
+                                <param name="host" type="string">127.0.0.1</param>
+                                <param name="port" type="integer">9010</param>
+                            </params>
+                        </fileHandler>
+                        <fileHandler name="fastcgi" extension=".phtml">
+                            <params>
+                                <param name="host" type="string">127.0.0.1</param>
+                                <param name="port" type="integer">9010</param>
+                            </params>
+                        </fileHandler>
+                        <fileHandler name="servlet" extension=".dhtml" />
+                        <fileHandler name="servlet" extension=".do" />
+                    </fileHandlers>
+
+                </server>
+
+            </servers>
+        </container>
+
+    </containers>
+
+</appserver>

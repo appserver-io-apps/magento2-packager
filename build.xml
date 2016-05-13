@@ -23,6 +23,12 @@
     <property name="vendor.dir" value ="${basedir}/${codepool}" />
     <property name="build.dir" value="${vendor.dir}/appserver-io/build" />
     <property name="php-target.dir" value="${basedir}/target"/>
+    
+    <!-- initialize the docker specific properties -->
+    <property name="docker.dir" value="${basedir}/docker"/>
+    <property name="docker-src.dir" value="${docker.dir}/src"/>
+    <property name="docker-etc.dir" value="${docker.dir}/etc"/>
+    <property name="docker-opt.dir" value="${docker.dir}/opt"/>
 
     <!-- ==================================================================== -->
     <!-- Import the common build configuration file                           -->
@@ -65,15 +71,6 @@
     </target>
 
     <!-- ==================================================================== -->
-    <!-- Creates the Swagger configuration                                    -->
-    <!-- ==================================================================== -->
-    <target name="swagger-it" description="Creates the Swagger configuration.">
-        <exec executable="src/vendor/bin/swagger">
-            <arg line="${php-src.dir} --exclude ${vendor.dir} --output ${php-target.dir}/${appserver.webapp.name}/swagger.json"/>
-        </exec>
-    </target>
-
-    <!-- ==================================================================== -->
     <!-- Download's the Magento 2 sources, extract's them to the target       -->
     <!-- directory and install's the composer dependencies                    -->
     <!-- ==================================================================== -->
@@ -106,7 +103,73 @@
             </filterchain>
         </copy>
     </target>
+    
+    <target name="docker-copy" description="">
 
+        <antcall target="copy"/>
+
+        <copy todir="${php-target.dir}/${appserver.webapp.name}-${appserver.webapp.version}" preservelastmodified="true" overwrite="true">
+            <fileset dir="${docker-src.dir}">
+                <include name="**/*" />
+            </fileset>
+            <filterchain>
+                <expandproperties/>
+            </filterchain>
+        </copy>
+
+        <move todir="${php-target.dir}/docker/opt/appserver/webapps/${appserver.webapp.name}-${appserver.webapp.version}">
+            <fileset dir="${php-target.dir}/${appserver.webapp.name}-${appserver.webapp.version}"/>
+        </move>
+
+        <copy todir="${php-target.dir}/docker/opt" preservelastmodified="true" overwrite="true">
+            <fileset dir="${docker-opt.dir}">
+                <include name="**/*" />
+            </fileset>
+            <filterchain>
+                <expandproperties/>
+            </filterchain>
+        </copy>
+
+        <copy todir="${php-target.dir}/docker/etc" preservelastmodified="true" overwrite="true">
+            <fileset dir="${docker-etc.dir}">
+                <include name="**/*" />
+            </fileset>
+            <filterchain>
+                <expandproperties/>
+            </filterchain>
+        </copy>
+        
+        <copy file="${docker.dir}/Dockerfile" tofile="${php-target.dir}/Dockerfile" preservelastmodified="true" overwrite="true">
+            <filterchain>
+                <expandproperties/>
+            </filterchain>
+        </copy>
+    </target>
+    
+    <target name="docker-build" description="">
+
+        <antcall target="docker-copy"/>
+
+        <exec dir="${php-target.dir}" executable="docker">
+            <arg line="build -t ${docker.registry}/${appserver.webapp.name}:${appserver.webapp.version} ."/>
+        </exec>
+    </target>
+
+    <target name="docker-push" description="">
+
+        <antcall target="docker-build"/>
+
+        <exec dir="${php-target.dir}" executable="docker">
+            <arg line="push ${docker.registry}/${appserver.webapp.name}"/>
+        </exec>
+    </target>
+
+    <target name="docker-run" description="">
+        <exec dir="${php-target.dir}" executable="docker">
+            <arg line="run -ti ${docker.registry}/${appserver.webapp.name}:${appserver.webapp.version}"/>
+        </exec>
+    </target>
+    
     <!-- ==================================================================== -->
     <!-- Copies any built package to the snapshot hosting server.             -->
     <!-- ==================================================================== -->
