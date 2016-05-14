@@ -15,15 +15,15 @@
              -->
             <server name="http*">
                 <virtualHosts>
-                    <virtualHost name="${webapp.name}.dev ${webapp.name}.local">
+                    <virtualHost name="${webapp.name}.dev ${webapp.name}.local ${webapp.name}.tdintern.de">
                         <params>
                             <param name="documentRoot" type="string">${host.appBase.dir}/${webapp.name}</param>
                         </params>
                         <rewrites>
                             <rewrite condition="-d{OR}-f{OR}-l" target="" flag="L" />
                             <rewrite condition="/pub/static/(.*)" target="/pub/static.php?resource=$1" flag="L" />
+                            <rewrite condition="/setup/.*" target="" flag="L" />
                             <rewrite condition="(.*)" target="index.php/$1" flag="L" />
-                        </rewrites>
                         <headers>
                             <header type="response" name="ExpiresDefault" value="access plus 1 year"/>
                             <header type="response" name="ExpiresByType" value="text/html A0"/>
