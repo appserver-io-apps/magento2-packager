@@ -24,6 +24,7 @@
                             <rewrite condition="/pub/static/(.*)" target="/pub/static.php?resource=$1" flag="L" />
                             <rewrite condition="/setup/.*" target="" flag="L" />
                             <rewrite condition="(.*)" target="index.php/$1" flag="L" />
+                        </rewrites>
                         <headers>
                             <header type="response" name="ExpiresDefault" value="access plus 1 year"/>
                             <header type="response" name="ExpiresByType" value="text/html A0"/>
