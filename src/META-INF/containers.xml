@@ -33,30 +33,12 @@
                         <accesses>
                             <access type="allow">
                                 <params>
-                                    <param name="X_REQUEST_URI" type="string">
-                                        ^\/([^\/]+\/)?(pub|index\.php).*
-                                    </param>
+                                    <param name="X_REQUEST_URI" type="string">^\/([^\/]+\/)?(pub|index\.php).*</param>
                                 </params>
                             </access>
                             <access type="deny">
                                 <params>
-                                    <param name="X_REQUEST_URI" type="string">.gitignore</param>
-                                    <param name="X_REQUEST_URI" type="string">.htaccess</param>
-                                    <param name="X_REQUEST_URI" type="string">.htaccess.sample</param>
-                                    <param name="X_REQUEST_URI" type="string">.php_cs</param>
-                                    <param name="X_REQUEST_URI" type="string">composer.json</param>
-                                    <param name="X_REQUEST_URI" type="string">composer.lock</param>
-                                    <param name="X_REQUEST_URI" type="string">CHANGELOG.md</param>
-                                    <param name="X_REQUEST_URI" type="string">CONTRIBUTING.md</param>
-                                    <param name="X_REQUEST_URI" type="string">CONTRIBUTOR_LICENSE_AGREEMENT.html</param>
-                                    <param name="X_REQUEST_URI" type="string">COPYING.txt</param>
-                                    <param name="X_REQUEST_URI" type="string">Gruntfile.js</param>
-                                    <param name="X_REQUEST_URI" type="string">LICENSE.txt</param>
-                                    <param name="X_REQUEST_URI" type="string">LICENSE_AFL.txt</param>
-                                    <param name="X_REQUEST_URI" type="string">nginx.conf.sample</param>
-                                    <param name="X_REQUEST_URI" type="string">package.json</param>
-                                    <param name="X_REQUEST_URI" type="string">php.ini.sample</param>
-                                    <param name="X_REQUEST_URI" type="string">README.md</param>
+                                    <param name="X_REQUEST_URI" type="string">^\/([^\/]+\/)(?!(pub|index\.php)).*</param>
                                 </params>
                             </access>
                         </accesses>
@@ -65,6 +47,32 @@
                         </environmentVariables>
                     </virtualHost>
                 </virtualHosts>
+                <rewrites>
+                    <rewrite condition="-d{OR}-f{OR}-l" target="" flag="L" />
+                    <rewrite condition="${webapp.name}/pub/static/(.*)" target="${webapp.name}/pub/static.php?resource=$1" flag="L" />
+                    <rewrite condition="${webapp.name}/setup/.*" target="" flag="L" />
+                    <rewrite condition="${webapp.name}/(.*)" target="${webapp.name}/index.php/$1" flag="L" />
+                </rewrites>
+                <headers>
+                    <header type="response" name="ExpiresDefault" value="access plus 1 year"/>
+                    <header type="response" name="ExpiresByType" value="text/html A0"/>
+                    <header type="response" name="ExpiresByType" value="text/plain A0"/>
+                </headers>
+                <accesses>
+                    <access type="allow">
+                        <params>
+                            <param name="X_REQUEST_URI" type="string">^\/${webapp.name}\/?(pub|index\.php).* </param>
+                        </params>
+                    </access>
+                    <access type="deny">
+                        <params>
+                            <param name="X_REQUEST_URI" type="string">^\/${webapp.name}\/(?!(pub|index\.php)).*</param>
+                        </params>
+                    </access>
+                </accesses>
+                <environmentVariables>
+                    <environmentVariable condition="^\/${webapp.name}@$X_REQUEST_URI" definition="LOGGER_ACCESS=${container.name}/${webapp.name}/Access" />
+                </environmentVariables>
             </server>
         </servers>
     </container>
