@@ -2,7 +2,7 @@
 <cron xmlns="http://www.appserver.io/appserver">
     <jobs>
         <job name="${webapp.name}-default-cron">
-            <schedule>* * * * * *</schedule>
+            <schedule>* */1 * * * *</schedule>
             <execute directory="${webapp.dir}" script="${base.dir}/bin/php">
                 <args>
                     <arg type="string">bin/magento</arg>
@@ -11,11 +11,20 @@
             </execute>
         </job>
         <job name="${webapp.name}-setup-cron">
-            <schedule>* * * * * *</schedule>
+            <schedule>* */1 * * * *</schedule>
             <execute directory="${webapp.dir}" script="${base.dir}/bin/php">
                 <args>
                     <arg type="string">bin/magento</arg>
                     <arg type="string">setup:cron:run</arg>
+                </args>
+            </execute>
+        </job>
+        <job name="${webapp.name}-indexer-cron">
+            <schedule>* */1 * * * *</schedule>
+            <execute directory="${webapp.dir}" script="${base.dir}/bin/php">
+                <args>
+                    <arg type="string">bin/magento</arg>
+                    <arg type="string">indexer:reindex</arg>
                 </args>
             </execute>
         </job>

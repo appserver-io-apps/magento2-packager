@@ -21,11 +21,14 @@
                         </params>
                         <rewrites>
                             <rewrite condition="-d{OR}-f{OR}-l" target="" flag="L" />
+                            <rewrite condition="/pub/static/(version\d*/)?(.*)$" target="/pub/static.php?resource=$2" flag="L" />
                             <rewrite condition="/pub/static/(.*)" target="/pub/static.php?resource=$1" flag="L" />
                             <rewrite condition="/setup/.*" target="" flag="L" />
                             <rewrite condition="(.*)" target="index.php/$1" flag="L" />
                         </rewrites>
                         <headers>
+                            <header type="response" name="X-XSS-Protection" value="1; mode=block"/>
+                            <header type="response" name="X-Content-Type-Options" value="1; nosniff"/>
                             <header type="response" name="ExpiresDefault" value="access plus 1 year"/>
                             <header type="response" name="ExpiresByType" value="text/html A0"/>
                             <header type="response" name="ExpiresByType" value="text/plain A0"/>
@@ -49,15 +52,22 @@
                 </virtualHosts>
                 <rewrites>
                     <rewrite condition="-d{OR}-f{OR}-l" target="" flag="L" />
+                    <rewrite condition="${webapp.name}/pub/static/(version\d*/)?(.*)$" target="${webapp.name}/pub/static.php?resource=$2" flag="L" />
                     <rewrite condition="${webapp.name}/pub/static/(.*)" target="${webapp.name}/pub/static.php?resource=$1" flag="L" />
                     <rewrite condition="${webapp.name}/setup/.*" target="" flag="L" />
                     <rewrite condition="${webapp.name}/(.*)" target="${webapp.name}/index.php/$1" flag="L" />
                 </rewrites>
-                <headers>
-                    <header type="response" name="ExpiresDefault" value="access plus 1 year"/>
-                    <header type="response" name="ExpiresByType" value="text/html A0"/>
-                    <header type="response" name="ExpiresByType" value="text/plain A0"/>
-                </headers>
+                <locations>
+                    <location condition="^\/${webapp.name}\/.*">
+                        <headers>
+                            <header type="response" name="X-XSS-Protection" value="1; mode=block"/>
+                            <header type="response" name="X-Content-Type-Options" value="1; nosniff"/>
+                            <header type="response" name="ExpiresDefault" value="access plus 1 year"/>
+                            <header type="response" name="ExpiresByType" value="text/html A0"/>
+                            <header type="response" name="ExpiresByType" value="text/plain A0"/>
+                        </headers>
+                    </location>
+                </locations>
                 <accesses>
                     <access type="allow">
                         <params>
