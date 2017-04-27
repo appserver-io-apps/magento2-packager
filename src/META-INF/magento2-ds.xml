@@ -19,13 +19,13 @@
      | a real production environment!
      |-->
 
-    <datasource name="${magento2.instance.webapp.name}">
+    <datasource name="${webapp.name}-ds">
         <database>
-            <driver>${magento2.db.driver}</driver>
-            <user>${magento2.db.user}</user>
-            <password>${magento2.db.password}</password>
-            <databaseName>${magento2.db.name}</databaseName>
-            <databaseHost>${magento2.db.host}</databaseHost>
+            <driver>pdo_mysql</driver>
+            <user>root</user>
+            <password></password>
+            <databaseName>${webapp.name}</databaseName>
+            <databaseHost>127.0.0.1</databaseHost>
         </database>
     </datasource>
 
