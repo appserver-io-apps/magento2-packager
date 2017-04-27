@@ -3,6 +3,7 @@
     <datasource name="${webapp.name}-ds"/>
     <installation>
         <steps>
+            <!--
             <step type="AppserverIo\Apps\Magento\Provisioning\Steps\PrepareDatabaseStep"/>
             <step type="AppserverIo\Appserver\Provisioning\Steps\ExecCliStep">
                 <execute script="bin/magento">
@@ -24,6 +25,7 @@
                     </args>
                 </execute>
             </step>
+            -->
         </steps>
     </installation>
 </provision>
