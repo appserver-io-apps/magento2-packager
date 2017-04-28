@@ -20,11 +20,10 @@
 
 namespace AppserverIo\Apps\Magento\Provisioning\Steps;
 
-use AppserverIo\Appserver\Provisioning\Steps\AbstractStep;
+use AppserverIo\Appserver\Provisioning\Steps\AbstractDatabaseStep;
 
 /**
- * An step implementation that creates a database, login credentials and dummy
- * products based on the specified datasource.
+ * An step implementation that creates a database based on the specified datasource.
  *
  * @author    Tim Wagner <tw@appserver.io>
  * @copyright 2015 TechDivision GmbH <info@appserver.io>
@@ -32,7 +31,7 @@ use AppserverIo\Appserver\Provisioning\Steps\AbstractStep;
  * @link      https://github.com/appserver-io/appserver
  * @link      http://www.appserver.io
  */
-class PrepareDatabaseStep extends AbstractStep
+class PrepareDatabaseStep extends AbstractDatabaseStep
 {
 
     /**
@@ -49,19 +48,31 @@ class PrepareDatabaseStep extends AbstractStep
         try {
             // log a message that provisioning starts
             $this->getApplication()->getInitialContext()->getSystemLogger()->info(
-                'Now start to prepare database using SchemaProcessor!'
+                'Now start to create database!'
             );
 
-            // load the schema processor of our application
-            $schemaProcessor = $this->getApplication()->search('SchemaProcessor');
+            // load the datasource node
+            /** @var \AppserverIo\Appserver\Core\Api\Node\DatabaseNode $databaseNode */
+            $databaseNode = $this->getDatasourceNode()->getDatabase();
 
-            // create schema, default products + login credentials
-            $schemaProcessor->createDatabase();
-            $schemaProcessor->createSchema();
+            // load the connection data
+            $user = $databaseNode->getUser();
+            $db = $databaseNode->getDatabaseName();
+            $host = $databaseNode->getDatabaseHost();
+            $password = $databaseNode->getPassword();
+
+            // create the connection
+            $dbh = new \PDO(sprintf('mysql:host=%s', $host), 'root');
+
+            // execute the statement
+            $dbh->exec("CREATE DATABASE `$db`;
+                CREATE USER '$user'@'localhost' IDENTIFIED BY '$password';
+                GRANT ALL ON `$db`.* TO '$user'@'localhost';
+                FLUSH PRIVILEGES;");
 
             // log a message that provisioning has been successfull
             $this->getApplication()->getInitialContext()->getSystemLogger()->info(
-                'Successfully prepared database using SchemaProcessor!'
+                'Successfully created database!'
             );
 
         } catch (\Exception $e) {

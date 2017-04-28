@@ -1,19 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <containers xmlns="http://www.appserver.io/appserver">
-    <container name="combined-appserver">
+    <!-- 
+     ! With the variable ${container.name} we append the container configuration to the container the
+     ! application has been deployed in. Please be aware, that it IS also possible to use a wildcard
+     ! pattern here, something like 'combined-*' that will append the container configuration to all
+     ! containers that start's with the name 'combined-'.
+     -->
+    <container name="${container.name}">
         <servers>
-            <server name="http">
+            <!-- 
+             ! With the wildcard pattern http* we append the virtual host configuration to all servers that
+             ! matches a server name starting with 'http'. Please be aware, that it is NOT possible to use
+             ! something like a ${server.name} variable here!
+             -->
+            <server name="http*">
                 <virtualHosts>
-                    <virtualHost name="magento2.dev magento2.local">
+                    <virtualHost name="${webapp.name}.dev ${webapp.name}.local ${webapp.name}.tdintern.de">
                         <params>
-                            <param name="documentRoot" type="string">webapps/${magento2.instance.webapp.name}</param>
+                            <param name="documentRoot" type="string">${host.appBase.dir}/${webapp.name}</param>
                         </params>
                         <rewrites>
+                            <rewrite condition="/pub/static/version.+?/(.+)$" target="/pub/static/$1" flag="L" />
                             <rewrite condition="-d{OR}-f{OR}-l" target="" flag="L" />
+                            <rewrite condition="/pub/static/(version.+?/)?(.*)$" target="/pub/static.php?resource=$2" flag="L" />
                             <rewrite condition="/pub/static/(.*)" target="/pub/static.php?resource=$1" flag="L" />
+                            <rewrite condition="/setup/.*" target="" flag="L" />
                             <rewrite condition="(.*)" target="index.php/$1" flag="L" />
                         </rewrites>
                         <headers>
+                            <header type="response" name="X-XSS-Protection" value="1; mode=block"/>
+                            <header type="response" name="X-Content-Type-Options" value="1; nosniff"/>
                             <header type="response" name="ExpiresDefault" value="access plus 1 year"/>
                             <header type="response" name="ExpiresByType" value="text/html A0"/>
                             <header type="response" name="ExpiresByType" value="text/plain A0"/>
@@ -21,90 +37,54 @@
                         <accesses>
                             <access type="allow">
                                 <params>
-                                    <param name="X_REQUEST_URI" type="string">
-                                        ^\/([^\/]+\/)?(pub|index\.php).*
-                                    </param>
+                                    <param name="X_REQUEST_URI" type="string">^\/([^\/]+\/)?(setup|pub|index\.php).*</param>
                                 </params>
                             </access>
                             <access type="deny">
                                 <params>
-                                    <param name="X_REQUEST_URI" type="string">.gitignore</param>
-                                    <param name="X_REQUEST_URI" type="string">.htaccess</param>
-                                    <param name="X_REQUEST_URI" type="string">.htaccess.sample</param>
-                                    <param name="X_REQUEST_URI" type="string">.php_cs</param>
-                                    <param name="X_REQUEST_URI" type="string">composer.json</param>
-                                    <param name="X_REQUEST_URI" type="string">composer.lock</param>
-                                    <param name="X_REQUEST_URI" type="string">CHANGELOG.md</param>
-                                    <param name="X_REQUEST_URI" type="string">CONTRIBUTING.md</param>
-                                    <param name="X_REQUEST_URI" type="string">CONTRIBUTOR_LICENSE_AGREEMENT.html</param>
-                                    <param name="X_REQUEST_URI" type="string">COPYING.txt</param>
-                                    <param name="X_REQUEST_URI" type="string">Gruntfile.js</param>
-                                    <param name="X_REQUEST_URI" type="string">LICENSE.txt</param>
-                                    <param name="X_REQUEST_URI" type="string">LICENSE_AFL.txt</param>
-                                    <param name="X_REQUEST_URI" type="string">nginx.conf.sample</param>
-                                    <param name="X_REQUEST_URI" type="string">package.json</param>
-                                    <param name="X_REQUEST_URI" type="string">php.ini.sample</param>
-                                    <param name="X_REQUEST_URI" type="string">README.md</param>
+                                    <param name="X_REQUEST_URI" type="string">^\/([^\/]+\/)(?!(setup|pub|index\.php)).*</param>
                                 </params>
                             </access>
                         </accesses>
                         <environmentVariables>
-                            <environmentVariable condition="" definition="LOGGER_ACCESS=magento2/Access" />
+                            <environmentVariable condition="" definition="LOGGER_ACCESS=${container.name}/${webapp.name}/Access" />
                         </environmentVariables>
                     </virtualHost>
                 </virtualHosts>
-            </server>
-            <server name="https">
-                <virtualHosts>
-                    <virtualHost name="magento2.dev magento2.local">
-                        <params>
-                            <param name="documentRoot" type="string">webapps/${magento2.instance.webapp.name}</param>
-                        </params>
-                        <rewrites>
-                            <rewrite condition="-d{OR}-f{OR}-l" target="" flag="L" />
-                            <rewrite condition="/pub/static/(.*)" target="/pub/static.php?resource=$1" flag="L" />
-                            <rewrite condition="(.*)" target="index.php/$1" flag="L" />
-                        </rewrites>
+                <rewrites>
+                    <rewrite condition="${webapp.name}/pub/static/version.+?/(.+)$" target="${webapp.name}/pub/static/$1" flag="" />
+                    <rewrite condition="-d{OR}-f{OR}-l" target="" flag="L" />
+                    <rewrite condition="${webapp.name}/pub/static/(version.+?/)?(.*)$" target="${webapp.name}/pub/static.php?resource=$2" flag="L" />
+                    <rewrite condition="${webapp.name}/pub/static/(.*)" target="${webapp.name}/pub/static.php?resource=$1" flag="L" />
+                    <rewrite condition="${webapp.name}/setup/.*" target="" flag="L" />
+                    <rewrite condition="${webapp.name}/(.*)" target="${webapp.name}/index.php/$1" flag="L" />
+                </rewrites>
+                <locations>
+                    <location condition="^\/${webapp.name}\/.*">
                         <headers>
+                            <header type="response" name="X-XSS-Protection" value="1; mode=block"/>
+                            <header type="response" name="X-Content-Type-Options" value="1; nosniff"/>
                             <header type="response" name="ExpiresDefault" value="access plus 1 year"/>
                             <header type="response" name="ExpiresByType" value="text/html A0"/>
                             <header type="response" name="ExpiresByType" value="text/plain A0"/>
                         </headers>
-                        <accesses>
-                            <access type="allow">
-                                <params>
-                                    <param name="X_REQUEST_URI" type="string">
-                                        ^\/([^\/]+\/)?(pub|index\.php).*
-                                    </param>
-                                </params>
-                            </access>
-                            <access type="deny">
-                                <params>
-                                    <param name="X_REQUEST_URI" type="string">.gitignore</param>
-                                    <param name="X_REQUEST_URI" type="string">.htaccess</param>
-                                    <param name="X_REQUEST_URI" type="string">.htaccess.sample</param>
-                                    <param name="X_REQUEST_URI" type="string">.php_cs</param>
-                                    <param name="X_REQUEST_URI" type="string">composer.json</param>
-                                    <param name="X_REQUEST_URI" type="string">composer.lock</param>
-                                    <param name="X_REQUEST_URI" type="string">CHANGELOG.md</param>
-                                    <param name="X_REQUEST_URI" type="string">CONTRIBUTING.md</param>
-                                    <param name="X_REQUEST_URI" type="string">CONTRIBUTOR_LICENSE_AGREEMENT.html</param>
-                                    <param name="X_REQUEST_URI" type="string">COPYING.txt</param>
-                                    <param name="X_REQUEST_URI" type="string">Gruntfile.js</param>
-                                    <param name="X_REQUEST_URI" type="string">LICENSE.txt</param>
-                                    <param name="X_REQUEST_URI" type="string">LICENSE_AFL.txt</param>
-                                    <param name="X_REQUEST_URI" type="string">nginx.conf.sample</param>
-                                    <param name="X_REQUEST_URI" type="string">package.json</param>
-                                    <param name="X_REQUEST_URI" type="string">php.ini.sample</param>
-                                    <param name="X_REQUEST_URI" type="string">README.md</param>
-                                </params>
-                            </access>
-                        </accesses>
-                        <environmentVariables>
-                            <environmentVariable condition="" definition="LOGGER_ACCESS=magento2/Access" />
-                        </environmentVariables>
-                    </virtualHost>
-                </virtualHosts>
+                    </location>
+                </locations>
+                <accesses>
+                    <access type="allow">
+                        <params>
+                            <param name="X_REQUEST_URI" type="string">^\/${webapp.name}\/?(setup|pub|index\.php).* </param>
+                        </params>
+                    </access>
+                    <access type="deny">
+                        <params>
+                            <param name="X_REQUEST_URI" type="string">^\/${webapp.name}\/(?!(setup|pub|index\.php)).*</param>
+                        </params>
+                    </access>
+                </accesses>
+                <environmentVariables>
+                    <environmentVariable condition="^\/${webapp.name}@$X_REQUEST_URI" definition="LOGGER_ACCESS=${container.name}/${webapp.name}/Access" />
+                </environmentVariables>
             </server>
         </servers>
     </container>

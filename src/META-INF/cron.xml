@@ -1,21 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <cron xmlns="http://www.appserver.io/appserver">
     <jobs>
-        <job name="magento2-default-cron">
-            <schedule>* * * * * *</schedule>
-            <execute directory="/opt/appserver/webapps/${magento2.instance.webapp.name}" script="/opt/appserver/bin/php">
+        <job name="${webapp.name}-default-cron">
+            <schedule>* */1 * * * *</schedule>
+            <execute directory="${webapp.dir}" script="${base.dir}/bin/php">
                 <args>
                     <arg type="string">bin/magento</arg>
                     <arg type="string">cron:run</arg>
                 </args>
             </execute>
         </job>
-        <job name="magento2-setup-cron">
-            <schedule>* * * * * *</schedule>
-            <execute directory="/opt/appserver/webapps/${magento2.instance.webapp.name}" script="/opt/appserver/bin/php">
+        <job name="${webapp.name}-setup-cron">
+            <schedule>* */1 * * * *</schedule>
+            <execute directory="${webapp.dir}" script="${base.dir}/bin/php">
                 <args>
                     <arg type="string">bin/magento</arg>
                     <arg type="string">setup:cron:run</arg>
+                </args>
+            </execute>
+        </job>
+        <job name="${webapp.name}-indexer-cron">
+            <schedule>* */1 * * * *</schedule>
+            <execute directory="${webapp.dir}" script="${base.dir}/bin/php">
+                <args>
+                    <arg type="string">bin/magento</arg>
+                    <arg type="string">indexer:reindex</arg>
                 </args>
             </execute>
         </job>
