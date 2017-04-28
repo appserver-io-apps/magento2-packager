@@ -20,7 +20,7 @@
                             <param name="documentRoot" type="string">${host.appBase.dir}/${webapp.name}</param>
                         </params>
                         <rewrites>
-                            <rewrite condition="/pub/static/version.+?/_requirejs/(.+)$" target="/pub/static/_requirejs/$1" flag="L" />
+                            <rewrite condition="/pub/static/version.+?/(.+)$" target="/pub/static/$1" flag="L" />
                             <rewrite condition="-d{OR}-f{OR}-l" target="" flag="L" />
                             <rewrite condition="/pub/static/(version.+?/)?(.*)$" target="/pub/static.php?resource=$2" flag="L" />
                             <rewrite condition="/pub/static/(.*)" target="/pub/static.php?resource=$1" flag="L" />
@@ -52,7 +52,7 @@
                     </virtualHost>
                 </virtualHosts>
                 <rewrites>
-                    <rewrite condition="${webapp.name}/pub/static/version.+?/_requirejs/(.+)$" target="${webapp.name}/pub/static/_requirejs/$1" flag="L" />
+                    <rewrite condition="${webapp.name}/pub/static/version.+?/(.+)$" target="${webapp.name}/pub/static/$1" flag="" />
                     <rewrite condition="-d{OR}-f{OR}-l" target="" flag="L" />
                     <rewrite condition="${webapp.name}/pub/static/(version.+?/)?(.*)$" target="${webapp.name}/pub/static.php?resource=$2" flag="L" />
                     <rewrite condition="${webapp.name}/pub/static/(.*)" target="${webapp.name}/pub/static.php?resource=$1" flag="L" />
