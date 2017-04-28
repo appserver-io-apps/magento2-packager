@@ -52,7 +52,7 @@
                     </virtualHost>
                 </virtualHosts>
                 <rewrites>
-                    <rewrite condition="${webapp.name}/pub/static/version.+?/(.+)$" target="${webapp.name}/pub/static/$1" flag="" />
+                    <rewrite condition="${webapp.name}/pub/static/version.+?/(.+)$" target="${webapp.name}/pub/static/$1" flag="L" />
                     <rewrite condition="-d{OR}-f{OR}-l" target="" flag="L" />
                     <rewrite condition="${webapp.name}/pub/static/(version.+?/)?(.*)$" target="${webapp.name}/pub/static.php?resource=$2" flag="L" />
                     <rewrite condition="${webapp.name}/pub/static/(.*)" target="${webapp.name}/pub/static.php?resource=$1" flag="L" />
