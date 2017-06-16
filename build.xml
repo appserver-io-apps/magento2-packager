@@ -83,6 +83,10 @@
         <exec dir="${php-target.dir}/${appserver.webapp.name}-${appserver.webapp.version}" executable="composer">
             <arg line="install"/>
         </exec>
+        <!-- install the composer dependencies -->
+        <exec dir="${php-target.dir}/${appserver.webapp.name}-${appserver.webapp.version}" executable="composer">
+            <arg line="require appserver-io/robo-tasks:dev-master --update-no-dev"/>
+        </exec>
     </target>
 
     <!-- ==================================================================== -->
@@ -103,7 +107,21 @@
             </filterchain>
         </copy>
     </target>
-    
+
+    <!-- ==================================================================== -->
+    <!-- Deploys the PHAR file into the configured deployment directory       -->
+    <!-- ==================================================================== -->
+    <target name="deploy-phar-to-docker" description="Deploys the PHAR file into the configured docker container.">
+        <!-- copy the PHAR archive to the deploy directory -->
+        <exec dir="${php-target.dir}" executable="docker">
+            <arg line="cp ${php-target.dir}/${package.filename} appserver-${appserver.minimal-version}-magento:${appserver.deploy.dir}/${package.filename}"/>
+        </exec>
+        <!-- create dodeploy flag to be transmitted via scp and do deploy on target system if needed -->
+        <exec dir="${php-target.dir}" executable="docker">
+            <arg line="exec appserver-${appserver.minimal-version}-magento bash -c 'touch ${appserver.deploy.dir}/${package.filename}.dodeploy'"/>
+        </exec>
+    </target>
+
     <target name="docker-copy" description="">
 
         <antcall target="copy"/>
